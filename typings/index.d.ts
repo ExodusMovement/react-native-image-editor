@@ -29,6 +29,11 @@ export type ImageCropData = {
    * `displaySize` param is not specified, this has no effect.
    */
   resizeMode?: $Maybe<"contain" | "cover" | "stretch">,
+
+  /**
+   * (Optional) if true, will disable the use of external cache.
+   **/
+  useInternalCache?: boolean,
 };
 
 declare class ImageEditor {
@@ -46,8 +51,7 @@ declare class ImageEditor {
    */
   static cropImage: (
     uri: string,
-    cropData: ImageCropData,
-    useExternalCache?: boolean
+    cropData: ImageCropData
   ) => Promise<string>
 }
 

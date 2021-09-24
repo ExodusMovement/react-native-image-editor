@@ -170,10 +170,10 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
   public void cropImage(
       String uri,
       ReadableMap options,
-      boolean useExternalCache,
       Promise promise) {
     ReadableMap offset = options.hasKey("offset") ? options.getMap("offset") : null;
     ReadableMap size = options.hasKey("size") ? options.getMap("size") : null;
+    boolean useInternalCache = options.hasKey("useInternalCache") ? options.getBoolean("useInternalCache") : true;
     if (offset == null || size == null ||
         !offset.hasKey("x") || !offset.hasKey("y") ||
         !size.hasKey("width") || !size.hasKey("height")) {
@@ -190,7 +190,7 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
         (int) offset.getDouble("y"),
         (int) size.getDouble("width"),
         (int) size.getDouble("height"),
-        useExternalCache,
+        useInternalCache,
         promise);
     if (options.hasKey("displaySize")) {
       ReadableMap targetSize = options.getMap("displaySize");
@@ -208,7 +208,7 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
     final int mY;
     final int mWidth;
     final int mHeight;
-    final boolean mUseExternalCache;
+    final boolean mUseInternalCache;
     int mTargetWidth = 0;
     int mTargetHeight = 0;
     final Promise mPromise;
@@ -220,7 +220,7 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
         int y,
         int width,
         int height,
-        boolean useExternalCache,
+        boolean useInternalCache,
         Promise promise) {
       super(context);
       if (x < 0 || y < 0 || width <= 0 || height <= 0) {
@@ -234,7 +234,7 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
       mWidth = width;
       mHeight = height;
       mPromise = promise;
-      mUseExternalCache = useExternalCache;
+      mUseInternalCache = useInternalCache;
     }
 
     public void setTargetSize(int width, int height) {
@@ -280,7 +280,7 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
           throw new IOException("Could not determine MIME type");
         }
 
-        File tempFile = createTempFile(mContext, mimeType, mUseExternalCache);
+        File tempFile = createTempFile(mContext, mimeType, mUseInternalCache);
         writeCompressedBitmapToFile(cropped, mimeType, tempFile);
 
         if (mimeType.equals("image/jpeg")) {
@@ -472,17 +472,21 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
    *
    * @param mimeType the MIME type of the file to create (image/*)
    */
-  private static File createTempFile(Context context, @Nullable String mimeType, boolean useExternalCache)
+  private static File createTempFile(Context context, @Nullable String mimeType, boolean useInternalCache)
       throws IOException {
     File externalCacheDir = context.getExternalCacheDir();
     File internalCacheDir = context.getCacheDir();
-    File cacheDir;
-    if ((useExternalCache && externalCacheDir == null) && internalCacheDir == null) {
+    File cacheDir = null;
+    if (externalCacheDir == null && internalCacheDir == null) {
       throw new IOException("No cache directory available");
     }
 
-    cacheDir = (!useExternalCache) ? internalCacheDir : (externalCacheDir != null) && (internalCacheDir != null) ? ( externalCacheDir.getFreeSpace() > internalCacheDir.getFreeSpace() ?
-          externalCacheDir : internalCacheDir ) : internalCacheDir;
+    if (useInternalCache || externalCacheDir == null) {
+      cacheDir = internalCacheDir;
+    } else if (externalCacheDir != null && internalCacheDir != null) {
+       cacheDir = (externalCacheDir.getFreeSpace() > internalCacheDir.getFreeSpace() ?
+          externalCacheDir : internalCacheDir );
+    }
 
     if (cacheDir == null) {
       throw new IOException("Could not access a cache directory");
