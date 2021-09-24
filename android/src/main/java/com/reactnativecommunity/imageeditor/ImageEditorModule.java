@@ -173,7 +173,7 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
       Promise promise) {
     ReadableMap offset = options.hasKey("offset") ? options.getMap("offset") : null;
     ReadableMap size = options.hasKey("size") ? options.getMap("size") : null;
-    boolean useInternalCache = options.hasKey("useInternalCache") ? options.getBoolean("useInternalCache") : true;
+    boolean useInternalCache = options.hasKey("useInternalCache") ? options.getBoolean("useInternalCache") : false;
     if (offset == null || size == null ||
         !offset.hasKey("x") || !offset.hasKey("y") ||
         !size.hasKey("width") || !size.hasKey("height")) {
@@ -477,7 +477,8 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
     File externalCacheDir = context.getExternalCacheDir();
     File internalCacheDir = context.getCacheDir();
     File cacheDir = null;
-    if (externalCacheDir == null && internalCacheDir == null) {
+
+     if (internalCacheDir == null && (externalCacheDir == null || useInternalCache)) {
       throw new IOException("No cache directory available");
     }
 
@@ -489,7 +490,7 @@ public class ImageEditorModule extends ReactContextBaseJavaModule {
     }
 
     if (cacheDir == null) {
-      throw new IOException("Could not access a cache directory");
+      throw new IOException("No cache directory available");
     }
 
 
